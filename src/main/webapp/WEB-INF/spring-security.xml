@@ -1,0 +1,49 @@
+<beans:beans xmlns="http://www.springframework.org/schema/security"
+         xmlns:beans="http://www.springframework.org/schema/beans"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="
+                http://www.springframework.org/schema/beans
+                http://www.springframework.org/schema/beans/spring-beans.xsd
+                http://www.springframework.org/schema/security
+                http://www.springframework.org/schema/security/spring-security.xsd">
+
+    <http auto-config="true" use-expressions="false">
+        <intercept-url pattern="/admin**"    access="ROLE_ADMIN" />
+        <intercept-url pattern="/hello**"    access="ROLE_ADMIN, ROLE_USER" />
+        <intercept-url pattern="/edituser**" access="ROLE_ADMIN, ROLE_USER" />
+        <intercept-url pattern="/editUser**" access="ROLE_ADMIN, ROLE_USER" />
+        <http-basic/>
+        <form-login login-processing-url="/j_spring_security_check"
+                    username-parameter="j_username"
+                    password-parameter="j_password"
+                    login-page="/login"
+                    authentication-failure-url="/login?login_error=t"/>
+        <remember-me key="spitterKey" token-validity-seconds="2419200"/>
+    </http>
+
+    <beans:bean id="dataSource" class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+        <beans:property name="driverClassName" value="org.postgresql.Driver"/>
+        <beans:property name="url"      value="jdbc:postgresql://127.0.0.1:5432/postgres"/>
+        <beans:property name="username" value="postgres"/>
+        <beans:property name="password" value="111111"/>
+    </beans:bean>
+
+    <jdbc-user-service id="jdbcUserService"
+                       data-source-ref="dataSource"
+                       users-by-username-query=
+                               "select username, password, true from spitter where username=?"
+                       authorities-by-username-query=
+                               "select username, role_spitter from spitter where username=?" />
+
+    <beans:bean id='bCryptPasswordEncoder' class='org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder'/>
+
+    <authentication-manager alias="authenticationManager">
+        <authentication-provider user-service-ref="jdbcUserService">
+            <!--<password-encoder hash="md5"/>-->
+            <!--<password-encoder hash="sha-256" />-->
+            <password-encoder ref="bCryptPasswordEncoder"/>
+        </authentication-provider>
+    </authentication-manager>
+
+</beans:beans>
+
